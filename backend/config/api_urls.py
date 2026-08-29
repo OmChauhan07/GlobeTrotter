@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -6,6 +6,7 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
+    path("accounts/", include(("apps.accounts.urls", "accounts"), namespace="accounts")),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "docs/",

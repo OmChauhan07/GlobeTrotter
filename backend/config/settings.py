@@ -53,6 +53,11 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "apps.accounts",
+    "apps.destinations",
+    "apps.activities",
+    "apps.trips",
+    "apps.expenses",
+    "apps.sharing",
 ]
 
 MIDDLEWARE = [
