@@ -12,6 +12,17 @@ The backend exposes a REST API built with Django and Django REST Framework.
 - Sharing and collaboration
 - Analytics
 
+## API Namespace
+The backend exposes API routes under /api/.
+
+## Schema and Documentation
+The foundation is configured with:
+- /api/schema/
+- /api/docs/
+- /api/redoc/
+
+These endpoints are provided by drf-spectacular and are designed as a starting point for REST API documentation in the project.
+
 ## API Design Goals
 - Consistent resource-oriented endpoints
 - Clear authentication and authorization boundaries
