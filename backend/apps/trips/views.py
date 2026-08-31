@@ -244,6 +244,22 @@ class TripCloneView(generics.GenericAPIView):
                         notes=act.notes,
                     )
 
+            # Duplicate associated expenses if any
+            try:
+                from apps.expenses.models import Expense
+                for exp in Expense.objects.filter(trip=source_trip):
+                    Expense.objects.create(
+                        trip=new_trip,
+                        name=exp.name,
+                        amount=exp.amount,
+                        currency=exp.currency,
+                        category=exp.category,
+                        date=exp.date,
+                        notes=exp.notes,
+                    )
+            except Exception:
+                pass
+
         return Response({
             "detail": "Trip cloned successfully.",
             "trip": TripSerializer(new_trip).data,

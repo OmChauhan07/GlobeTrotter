@@ -17,9 +17,11 @@ from .views import (
 urlpatterns = [
     path("", TripListCreateView.as_view(), name="trip-list"),
     path("public/<slug:slug>/", PublicTripDetailView.as_view(), name="trip-public-detail"),
+    path("public/<slug:slug>/copy/", TripCloneView.as_view(), name="trip-public-copy"),
     path("public/<slug:slug>/clone/", TripCloneView.as_view(), name="trip-public-clone"),
     path("<int:pk>/", TripDetailView.as_view(), name="trip-detail"),
     path("<int:pk>/publish/", TripPublishToggleView.as_view(), name="trip-publish-toggle"),
+    path("<int:pk>/copy/", TripCloneView.as_view(), name="trip-copy"),
     path("<int:pk>/clone/", TripCloneView.as_view(), name="trip-clone"),
     path("<int:pk>/stops/", TripStopListCreateView.as_view(), name="trip-stop-list-create"),
     path("<int:pk>/reorder-stops/", ReorderTripStopsView.as_view(), name="trip-reorder-stops"),

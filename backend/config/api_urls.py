@@ -5,9 +5,14 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from apps.trips.views import PublicTripDetailView, TripCloneView
+
 urlpatterns = [
     path("accounts/", include(("apps.accounts.urls", "accounts"), namespace="accounts")),
     path("trips/", include(("apps.trips.urls", "trips"), namespace="trips")),
+    path("public/trips/<slug:slug>/", PublicTripDetailView.as_view(), name="public-trip-detail"),
+    path("public/trips/<slug:slug>/copy/", TripCloneView.as_view(), name="public-trip-copy"),
+    path("public/trips/<slug:slug>/clone/", TripCloneView.as_view(), name="public-trip-clone"),
     path("", include("apps.destinations.urls")),
     path("", include("apps.activities.urls")),
     path("", include("apps.expenses.urls")),

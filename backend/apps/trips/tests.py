@@ -402,4 +402,51 @@ class PublicSharingAndCloneAPITests(APITestCase):
         response = self.client.post(url, format="json")
         self.assertEqual(response.status_code, 401)
 
+    def test_direct_public_api_root_routes_and_no_data_leakage(self):
+        # Test /api/public/trips/<slug>/
+        response = self.client.get("/api/public/trips/kyoto-cultural-journey-123456/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["name"], "Kyoto Cultural Journey")
+
+        # Security check: verify no private user fields are leaked
+        self.assertNotIn("email", response.data)
+        self.assertNotIn("password", response.data)
+        self.assertNotIn("token", response.data)
+        self.assertEqual(response.data["author"], "author")
+
+    def test_copy_endpoint_preserves_original_and_duplicates_expenses(self):
+        from apps.expenses.models import Expense
+
+        Expense.objects.create(
+            trip=self.public_trip,
+            name="Shrine Ticket",
+            amount=50.00,
+            currency="USD",
+            category="activities",
+            date=date(2026, 10, 2),
+            notes="Shrine ticket",
+        )
+
+        self.client.force_authenticate(user=self.traveler)
+        response = self.client.post("/api/public/trips/kyoto-cultural-journey-123456/copy/", format="json")
+        self.assertEqual(response.status_code, 201)
+
+        cloned_trip_id = response.data["trip"]["id"]
+        cloned_trip = Trip.objects.get(pk=cloned_trip_id)
+
+        # Original trip remains intact with original owner
+        self.public_trip.refresh_from_db()
+        self.assertEqual(self.public_trip.user, self.author)
+        self.assertEqual(self.public_trip.name, "Kyoto Cultural Journey")
+
+        # Cloned trip is owned by traveler
+        self.assertEqual(cloned_trip.user, self.traveler)
+        self.assertEqual(cloned_trip.name, "Copy of Kyoto Cultural Journey")
+
+        # Cloned trip has duplicated expenses
+        cloned_expenses = Expense.objects.filter(trip=cloned_trip)
+        self.assertEqual(cloned_expenses.count(), 1)
+        self.assertEqual(float(cloned_expenses.first().amount), 50.00)
+
+
 

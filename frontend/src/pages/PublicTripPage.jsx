@@ -91,7 +91,7 @@ export function PublicTripPage() {
       try {
         setIsLoading(true)
         setError('')
-        const res = await api.get(`/trips/public/${slug}/`)
+        const res = await api.get(`/public/trips/${slug}/`)
         if (isMounted) {
           setTrip(res.data)
         }
@@ -131,7 +131,7 @@ export function PublicTripPage() {
 
     try {
       setIsCloning(true)
-      const res = await api.post(`/trips/public/${slug}/clone/`)
+      const res = await api.post(`/public/trips/${slug}/copy/`)
       const newTripId = res.data?.trip?.id
       if (newTripId) {
         navigate(`/trips/${newTripId}`)

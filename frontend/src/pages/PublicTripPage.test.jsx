@@ -1,4 +1,4 @@
-﻿import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import PublicTripPage from './PublicTripPage'
@@ -147,7 +147,7 @@ describe('PublicTripPage Component', () => {
     fireEvent.click(cloneBtn)
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/trips/public/swiss-alps-tour-12345/clone/')
+      expect(api.post).toHaveBeenCalledWith('/public/trips/swiss-alps-tour-12345/copy/')
       expect(mockNavigate).toHaveBeenCalledWith('/trips/99')
     })
   })
