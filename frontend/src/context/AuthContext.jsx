@@ -42,6 +42,19 @@ export function AuthProvider({ children }) {
     [storeAuth],
   )
 
+  const requestRegistrationOTP = useCallback(async (payload) => {
+    return await api.post('/auth/register/request-otp/', payload)
+  }, [])
+
+  const completeRegistrationWithTokens = useCallback(
+    (authData) => {
+      const nextUser = authData.user || { role: 'traveler' }
+      const nextToken = authData.access
+      storeAuth(nextUser, nextToken)
+    },
+    [storeAuth],
+  )
+
   const logout = useCallback(() => {
     setUser(null)
     setToken(null)
@@ -77,9 +90,11 @@ export function AuthProvider({ children }) {
       isAdmin: Boolean(user?.role === 'admin'),
       login,
       register,
+      requestRegistrationOTP,
+      completeRegistrationWithTokens,
       logout,
     }),
-    [user, token, login, register, logout],
+    [user, token, login, register, requestRegistrationOTP, completeRegistrationWithTokens, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
