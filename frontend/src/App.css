@@ -1581,7 +1581,45 @@ button, input, select, textarea {
 }
 
 /* ==========================================================================
-   Responsive Breakpoints
+   Responsive Breakpoints & Touch Target Optimization
+   ========================================================================== */
+
+/* Universal Touch Targets */
+.button,
+.icon-button,
+.sidebar-link,
+.mobile-nav-item,
+.discovery-tab,
+.tab-btn,
+.view-toggle {
+  min-height: 44px;
+}
+
+.icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Horizontal Table & Rail Scroll Containers */
+.table-wrapper,
+.expenses-table-wrap,
+.admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================================
+   Tablet Breakpoint (641px - 1024px)
    ========================================================================== */
 
 @media (max-width: 1024px) {
@@ -1594,7 +1632,7 @@ button, input, select, textarea {
   }
 
   .page-shell {
-    padding: 1.5rem 1.5rem 5rem;
+    padding: 1.5rem 1.5rem 5.5rem;
   }
 
   .app-topbar {
@@ -1616,16 +1654,63 @@ button, input, select, textarea {
   .auth-hero-pane {
     display: none;
   }
+
+  .budget-hero-overview {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+    padding: 2rem;
+  }
+
+  .budget-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-hero {
+    padding: 3.5rem 2rem;
+  }
 }
 
-@media (max-width: 768px) {
+/* ==========================================================================
+   Mobile & Phone Breakpoint (0px - 640px)
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .page-shell {
+    padding: 1rem 1rem 5.5rem;
+  }
+
+  .app-topbar {
+    padding: 0 1rem;
+    height: 60px;
+  }
+
+  .topbar-search {
+    width: 100%;
+    max-width: 220px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .form-row-2col {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
   .stop-form-grid {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .mini-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem;
   }
 
   .dashboard-hero {
     flex-direction: column;
     align-items: flex-start;
+    padding: 1.75rem 1.25rem;
+    gap: 1.25rem;
   }
 
   .adventure-meta-grid {
@@ -1634,7 +1719,99 @@ button, input, select, textarea {
   }
 
   .adventure-content {
-    padding: 1.75rem;
+    padding: 1.5rem 1.25rem;
+  }
+
+  .discovery-hero {
+    padding: 2.25rem 1.25rem;
+  }
+
+  .discovery-search-bar {
+    padding: 0.4rem 0.5rem 0.4rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: var(--radius-md);
+  }
+
+  .filter-country {
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    width: 100%;
+    padding: 0.5rem 0;
+  }
+
+  .activity-filters-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .filter-num {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding: 0.5rem 0;
+  }
+
+  .discovery-card__body {
+    padding: 1.15rem 1.25rem 1.25rem;
+  }
+
+  .itinerary-header-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .trip-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .timeline-item {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .timeline-item__time {
+    padding-top: 0;
+  }
+
+  .public-hero {
+    padding: 2.5rem 1.25rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .public-hero__title {
+    font-size: clamp(2rem, 7vw, 2.75rem);
+  }
+
+  .public-clone-cta-card {
+    padding: 1.75rem 1.25rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .public-clone-btn {
+    width: 100%;
+  }
+
+  .otp-digit-input {
+    height: 48px !important;
+    font-size: 1.25rem !important;
+  }
+
+  .landing-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2.5rem !important;
+    padding: 3rem 1.25rem 3.5rem !important;
+  }
+
+  .landing-feature-row {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  .landing-nav-links {
+    display: none !important;
   }
 }
 
