@@ -70,6 +70,19 @@ class TripModelTests(TestCase):
         with self.assertRaises(ValidationError):
             duplicate.full_clean()
 
+    def test_trip_activity_date_must_fit_within_stop_dates(self):
+        invalid_activity = TripActivity(
+            trip_stop=self.trip_stop,
+            activity=self.activity,
+            date=date(2026, 6, 3),
+            start_time=time(9, 0),
+            end_time=time(10, 0),
+            position=2,
+        )
+
+        with self.assertRaises(ValidationError):
+            invalid_activity.full_clean()
+
 
 class TripAPITests(APITestCase):
     def setUp(self):
@@ -210,3 +223,94 @@ class TripAPITests(APITestCase):
         )
         self.assertEqual(activity_reorder.status_code, 200)
         self.assertEqual([item["id"] for item in activity_reorder.data["activities"]], [activity_2.pk, activity_1.pk])
+
+    def test_stop_date_outside_trip_range_fails(self):
+        self.client.force_authenticate(user=self.user)
+        trip = Trip.objects.create(
+            user=self.user,
+            name="Date test trip",
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 5),
+        )
+
+        response = self.client.post(
+            reverse("trips:trip-stop-list-create", kwargs={"pk": trip.pk}),
+            {"city": self.city.pk, "start_date": "2026-05-30", "end_date": "2026-06-02"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+        response2 = self.client.post(
+            reverse("trips:trip-stop-list-create", kwargs={"pk": trip.pk}),
+            {"city": self.city.pk, "start_date": "2026-06-02", "end_date": "2026-06-10"},
+            format="json",
+        )
+        self.assertEqual(response2.status_code, 400)
+
+    def test_activity_date_outside_stop_range_fails(self):
+        self.client.force_authenticate(user=self.user)
+        trip = Trip.objects.create(
+            user=self.user,
+            name="Activity date trip",
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 10),
+        )
+        stop = TripStop.objects.create(
+            trip=trip,
+            city=self.city,
+            start_date=date(2026, 6, 2),
+            end_date=date(2026, 6, 4),
+        )
+
+        response = self.client.post(
+            reverse("trips:trip-activity-create", kwargs={"pk": stop.pk}),
+            {
+                "activity": self.activity.pk,
+                "date": "2026-06-05",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_stop_and_activity_deletion(self):
+        self.client.force_authenticate(user=self.user)
+        trip = Trip.objects.create(
+            user=self.user,
+            name="Delete test trip",
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 10),
+        )
+        stop = TripStop.objects.create(
+            trip=trip,
+            city=self.city,
+            start_date=date(2026, 6, 2),
+            end_date=date(2026, 6, 4),
+        )
+        activity = TripActivity.objects.create(
+            trip_stop=stop,
+            activity=self.activity,
+            date=date(2026, 6, 2),
+        )
+
+        act_del = self.client.delete(reverse("trips:trip-activity-detail", kwargs={"pk": activity.pk}))
+        self.assertEqual(act_del.status_code, 204)
+        self.assertFalse(TripActivity.objects.filter(pk=activity.pk).exists())
+
+        stop_del = self.client.delete(reverse("trips:stop-detail", kwargs={"pk": stop.pk}))
+        self.assertEqual(stop_del.status_code, 204)
+        self.assertFalse(TripStop.objects.filter(pk=stop.pk).exists())
+
+    def test_auto_position_assignment_for_stops_and_activities(self):
+        self.client.force_authenticate(user=self.user)
+        trip = Trip.objects.create(
+            user=self.user,
+            name="Auto pos trip",
+            start_date=date(2026, 6, 1),
+            end_date=date(2026, 6, 10),
+        )
+        stop1 = TripStop.objects.create(trip=trip, city=self.city, start_date=date(2026, 6, 1), end_date=date(2026, 6, 3))
+        stop2 = TripStop.objects.create(trip=trip, city=self.city, start_date=date(2026, 6, 4), end_date=date(2026, 6, 6))
+
+        self.assertEqual(stop1.position, 1)
+        self.assertEqual(stop2.position, 2)
+

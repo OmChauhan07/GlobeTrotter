@@ -57,7 +57,16 @@ class TripStop(models.Model):
         if self.start_date and self.end_date and self.start_date > self.end_date:
             raise ValidationError("start_date cannot be after end_date")
 
+        if self.trip and self.trip.start_date and self.start_date and self.start_date < self.trip.start_date:
+            raise ValidationError("stop start_date must fall within the trip dates.")
+
+        if self.trip and self.trip.end_date and self.end_date and self.end_date > self.trip.end_date:
+            raise ValidationError("stop end_date must fall within the trip dates.")
+
     def save(self, *args, **kwargs):
+        if not self.position and self.trip_id:
+            max_pos = TripStop.objects.filter(trip_id=self.trip_id).aggregate(models.Max("position"))["position__max"] or 0
+            self.position = max_pos + 1
         self.full_clean()
         return super().save(*args, **kwargs)
 
@@ -86,7 +95,26 @@ class TripActivity(models.Model):
         if self.start_time and self.end_time and self.start_time > self.end_time:
             raise ValidationError("start_time cannot be after end_time")
 
+        if self.trip_stop is None:
+            return
+
+        trip = self.trip_stop.trip
+        if trip.start_date and self.date and self.date < trip.start_date:
+            raise ValidationError("activity date must fall within the trip dates.")
+
+        if trip.end_date and self.date and self.date > trip.end_date:
+            raise ValidationError("activity date must fall within the trip dates.")
+
+        if self.trip_stop.start_date and self.date and self.date < self.trip_stop.start_date:
+            raise ValidationError("activity date must fall within the stop dates.")
+
+        if self.trip_stop.end_date and self.date and self.date > self.trip_stop.end_date:
+            raise ValidationError("activity date must fall within the stop dates.")
+
     def save(self, *args, **kwargs):
+        if not self.position and self.trip_stop_id:
+            max_pos = TripActivity.objects.filter(trip_stop_id=self.trip_stop_id).aggregate(models.Max("position"))["position__max"] or 0
+            self.position = max_pos + 1
         self.full_clean()
         return super().save(*args, **kwargs)
 

@@ -34,18 +34,40 @@ class TripSerializer(serializers.ModelSerializer):
 
 
 class TripStopSerializer(serializers.ModelSerializer):
+    city_name = serializers.CharField(source="city.name", read_only=True)
+    city_country = serializers.CharField(source="city.country", read_only=True)
+    activities = serializers.SerializerMethodField()
+
     class Meta:
         model = TripStop
         fields = [
             "id",
             "trip",
             "city",
+            "city_name",
+            "city_country",
             "start_date",
             "end_date",
             "position",
             "notes",
+            "activities",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "activities", "city_name", "city_country"]
+
+    def to_internal_value(self, data):
+        data = data.copy()
+        city_value = data.get("city")
+
+        if isinstance(city_value, str) and city_value.strip():
+            city_obj = City.objects.filter(name__iexact=city_value.strip()).first()
+            if city_obj is None:
+                city_obj = City.objects.create(name=city_value.strip(), country="Unspecified")
+            data["city"] = city_obj.pk
+
+        return super().to_internal_value(data)
+
+    def get_activities(self, obj):
+        return TripActivitySerializer(obj.activities.all().order_by("position"), many=True).data
 
     def validate(self, attrs):
         trip = attrs.get("trip", getattr(self.instance, "trip", None))
@@ -69,12 +91,17 @@ class TripStopSerializer(serializers.ModelSerializer):
 
 
 class TripActivitySerializer(serializers.ModelSerializer):
+    activity_name = serializers.CharField(source="activity.name", read_only=True)
+    category = serializers.CharField(source="activity.category", read_only=True)
+
     class Meta:
         model = TripActivity
         fields = [
             "id",
             "trip_stop",
             "activity",
+            "activity_name",
+            "category",
             "date",
             "start_time",
             "end_time",
@@ -82,7 +109,27 @@ class TripActivitySerializer(serializers.ModelSerializer):
             "estimated_cost",
             "notes",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "activity_name", "category"]
+
+    def to_internal_value(self, data):
+        data = data.copy()
+        activity_value = data.get("activity")
+
+        if isinstance(activity_value, str) and activity_value.strip():
+            trip_stop_id = data.get("trip_stop")
+            if trip_stop_id:
+                trip_stop = TripStop.objects.filter(pk=trip_stop_id).first()
+                if trip_stop:
+                    activity_obj = Activity.objects.filter(city=trip_stop.city, name__iexact=activity_value.strip()).first()
+                    if activity_obj is None:
+                        activity_obj = Activity.objects.create(
+                            city=trip_stop.city,
+                            name=activity_value.strip(),
+                            category="other",
+                        )
+                    data["activity"] = activity_obj.pk
+
+        return super().to_internal_value(data)
 
     def validate(self, attrs):
         start_time = attrs.get("start_time", getattr(self.instance, "start_time", None))
@@ -105,5 +152,11 @@ class TripActivitySerializer(serializers.ModelSerializer):
 
         if trip_stop.trip.end_date and activity_date and activity_date > trip_stop.trip.end_date:
             raise serializers.ValidationError({"detail": "activity date must fall within the trip dates."})
+
+        if trip_stop.start_date and activity_date and activity_date < trip_stop.start_date:
+            raise serializers.ValidationError({"detail": "activity date must fall within the stop dates."})
+
+        if trip_stop.end_date and activity_date and activity_date > trip_stop.end_date:
+            raise serializers.ValidationError({"detail": "activity date must fall within the stop dates."})
 
         return attrs

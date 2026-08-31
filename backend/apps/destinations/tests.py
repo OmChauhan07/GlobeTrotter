@@ -8,7 +8,7 @@ User = get_user_model()
 
 class DestinationModelTests(TestCase):
     def test_saved_destination_unique_per_user(self):
-        user = User.objects.create_user(email="user@example.com", password="StrongPass123!")
+        user = User.objects.create_user(username="testuser", email="user@example.com", password="StrongPass123!")
         city = City.objects.create(name="Paris", country="France")
 
         SavedDestination.objects.create(user=user, city=city)

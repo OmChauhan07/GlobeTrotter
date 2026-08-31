@@ -120,6 +120,16 @@ DATABASES = {
     )
 }
 
+import sys
+if "test" in sys.argv or os.getenv("DJANGO_TEST") == "1":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
