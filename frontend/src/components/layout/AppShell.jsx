@@ -127,9 +127,11 @@ export function AppShell() {
           </div>
         </header>
 
-        <main className="page-shell">
-          <Outlet />
-        </main>
+        <div className="app-main-content-scroll">
+          <main className="page-shell">
+            <Outlet />
+          </main>
+        </div>
       </div>
 
       {/* Mobile Responsive Bottom Navigation */}
