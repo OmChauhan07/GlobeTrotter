@@ -1,9 +1,12 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 
+import AdminRoute from '../components/auth/AdminRoute'
 import AppShell from '../components/layout/AppShell'
 import { AuthProvider } from '../context/AuthContext'
+import AdminDashboardPage from '../pages/AdminDashboardPage'
 import DashboardPage from '../pages/DashboardPage'
 import DiscoveryPage from '../pages/DiscoveryPage'
+import LandingPage from '../pages/LandingPage'
 import LoginPage from '../pages/LoginPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import ProfilePage from '../pages/ProfilePage'
@@ -19,11 +22,11 @@ export function AppRoutes() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
 
         <Route element={<AppShell />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/discover" element={<DiscoveryPage />} />
           <Route path="/destinations" element={<DiscoveryPage />} />
@@ -33,8 +36,15 @@ export function AppRoutes() {
           <Route path="/trips/:id/budget" element={<TripBudgetPage />} />
           <Route path="/trips/:id/calendar" element={<TripCalendarPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<ProfilePage />} />
           <Route path="/public/trip/:slug" element={<PublicTripPage />} />
           <Route path="/public/trips/:slug" element={<PublicTripPage />} />
+
+          {/* Admin Protected Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/analytics" element={<AdminDashboardPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

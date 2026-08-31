@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import api from '../api/client'
 import { AuthContext } from './auth-context'
@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async (credentials) => {
       const response = await api.post('/accounts/login/', credentials)
-      const nextUser = response.data.user || { username: credentials.username }
+      const nextUser = response.data.user || { username: credentials.username, role: 'traveler' }
       const nextToken = response.data.access
 
       storeAuth(nextUser, nextToken)
@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
   const register = useCallback(
     async (payload) => {
       const response = await api.post('/accounts/register/', payload)
-      const nextUser = response.data.user || payload
+      const nextUser = response.data.user || { username: payload.username, role: 'traveler' }
       const nextToken = response.data.access
 
       storeAuth(nextUser, nextToken)
@@ -49,11 +49,32 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('gt_access_token')
   }, [])
 
+  // Refresh current user info & server role on initial load if token exists
+  useEffect(() => {
+    if (!token) return
+    let isMounted = true
+    api
+      .get('/accounts/me/')
+      .then((res) => {
+        if (isMounted && res.data) {
+          setUser(res.data)
+          localStorage.setItem('gt_user', JSON.stringify(res.data))
+        }
+      })
+      .catch(() => {
+        // Token might be expired or invalid
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [token])
+
   const value = useMemo(
     () => ({
       user,
       token,
       isAuthenticated: Boolean(token && user),
+      isAdmin: Boolean(user?.role === 'admin'),
       login,
       register,
       logout,
@@ -65,4 +86,5 @@ export function AuthProvider({ children }) {
 }
 
 export default AuthContext
+
 

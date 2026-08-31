@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   Settings,
+  ShieldCheck,
   Sparkles,
   User,
 } from 'lucide-react'
@@ -62,6 +63,17 @@ export function AppShell() {
               <Settings size={18} />
               <span>Settings</span>
             </NavLink>
+
+            {user?.role === 'admin' && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                style={{ marginTop: '0.5rem', borderTop: '1px dashed var(--color-border)', paddingTop: '0.75rem' }}
+              >
+                <ShieldCheck size={18} />
+                <span>Admin Portal</span>
+              </NavLink>
+            )}
           </nav>
         </div>
 
@@ -78,7 +90,7 @@ export function AppShell() {
               </div>
               <div className="user-meta-info">
                 <div className="user-name">{user?.username || 'Traveler'}</div>
-                <div className="user-role">Explorer</div>
+                <div className="user-role">{user?.role === 'admin' ? 'Administrator' : 'Explorer'}</div>
               </div>
               <button
                 type="button"
