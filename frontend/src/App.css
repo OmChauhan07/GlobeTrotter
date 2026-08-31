@@ -1086,4 +1086,218 @@ textarea {
   }
 }
 
+/* ==========================================================================
+   Budget & Cost Analytics Styles
+   ========================================================================== */
+
+.trip-budget-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  color: #7c3aed;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 0.35rem;
+  transition: color 0.15s ease;
+}
+
+.back-link:hover {
+  color: #5b21b6;
+}
+
+.budget-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem 1.4rem;
+}
+
+.metric-value {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #1e1b4b;
+  margin: 0.35rem 0 0.2rem;
+}
+
+.metric-sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.threshold-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.35rem 0 0.2rem;
+}
+
+.threshold-prefix {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e1b4b;
+}
+
+.input-compact {
+  padding: 0.35rem 0.6rem !important;
+  font-size: 1.1rem;
+  font-weight: 600;
+  width: 120px;
+}
+
+.warning-banner {
+  background: #fffbeb !important;
+  border: 1px solid #fef3c7 !important;
+  color: #92400e !important;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.warning-icon {
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.warning-content p {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.25rem;
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.empty-chart-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.budget-management-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 1.25rem;
+}
+
+.add-expense-card {
+  height: fit-content;
+}
+
+.category-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
+}
+
+.chip {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #e5def5;
+  background: #f8f6fd;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.chip:hover {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.chip.active {
+  background: #7c3aed;
+  color: #fff;
+  border-color: #7c3aed;
+}
+
+.expenses-table-wrap {
+  overflow-x: auto;
+}
+
+.expenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.expenses-table th {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 2px solid #ede8f7;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.expenses-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f3effc;
+  vertical-align: middle;
+}
+
+.expense-stop-sub {
+  display: block;
+  font-size: 0.76rem;
+  color: #6b7280;
+  font-weight: normal;
+}
+
+.expense-amount {
+  font-weight: 700;
+  color: #1e1b4b;
+}
+
+.empty-expenses-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #6b7280;
+}
+
+@media (max-width: 900px) {
+  .budget-management-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 

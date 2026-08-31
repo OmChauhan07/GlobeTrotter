@@ -10,6 +10,7 @@ urlpatterns = [
     path("trips/", include(("apps.trips.urls", "trips"), namespace="trips")),
     path("", include("apps.destinations.urls")),
     path("", include("apps.activities.urls")),
+    path("", include("apps.expenses.urls")),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "docs/",
