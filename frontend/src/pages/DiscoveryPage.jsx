@@ -182,11 +182,15 @@ export function DiscoveryPage() {
   return (
     <div className="discovery-page">
       <div className="discovery-hero">
-        <span className="eyebrow">Explore the World</span>
-        <h2>Discover Destinations & Activities</h2>
-        <p className="subtext">
-          Search cities with cost and popularity metrics, filter unique experiences, and add them
-          directly to your travel itinerary.
+        <span className="eyebrow" style={{ color: 'var(--color-accent-border)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.8rem', fontWeight: 700 }}>
+          Discover Destinations & Activities
+        </span>
+        <h1 style={{ color: 'var(--color-white)', fontSize: 'clamp(2.4rem, 4vw, 3.25rem)', margin: '0.35rem 0 0.6rem' }}>
+          Where do you want to wander?
+        </h1>
+        <p style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '1.05rem', maxWidth: '640px' }}>
+          Explore destinations with live cost metrics, discover atmospheric activities, and save them
+          directly to your journey.
         </p>
 
         {/* Tab Navigation */}

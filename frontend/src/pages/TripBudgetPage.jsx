@@ -35,11 +35,11 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 
 const CATEGORY_COLORS = {
-  transport: '#3b82f6',
-  accommodation: '#8b5cf6',
-  activities: '#ec4899',
-  meals: '#f59e0b',
-  other: '#10b981',
+  transport: '#54758a',
+  accommodation: '#758b7b',
+  activities: '#b58a4a',
+  meals: '#b57b35',
+  other: '#8f6a38',
 }
 
 const CATEGORY_LABELS = {
