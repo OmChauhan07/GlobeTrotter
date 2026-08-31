@@ -23,6 +23,16 @@ import CityCard from '../components/discovery/CityCard'
 import { Card } from '../components/ui/Card'
 import { useAuth } from '../hooks/useAuth'
 
+const POPULAR_COUNTRIES = [
+  { id: '', label: 'All Places' },
+  { id: 'France', label: 'France' },
+  { id: 'Italy', label: 'Italy' },
+  { id: 'Spain', label: 'Spain' },
+  { id: 'Japan', label: 'Japan' },
+  { id: 'United States', label: 'United States' },
+  { id: 'United Kingdom', label: 'United Kingdom' },
+]
+
 const CATEGORIES = [
   { id: '', label: 'All Experiences', icon: Sparkles },
   { id: 'culture', label: 'Culture & Art', icon: Landmark },
@@ -273,6 +283,24 @@ export function DiscoveryPage() {
             Search
           </button>
         </form>
+
+        {/* Popular Destination / Country Filter Pills */}
+        {activeTab === 'cities' ? (
+          <div className="category-pills">
+            {POPULAR_COUNTRIES.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                className={`category-pill ${selectedCountry === id ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedCountry(id)
+                }}
+              >
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {/* Experience Category Pills */}
         {activeTab === 'activities' ? (
