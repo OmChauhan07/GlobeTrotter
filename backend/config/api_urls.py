@@ -5,10 +5,12 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from apps.accounts.admin_views import AdminAnalyticsView
 from apps.trips.views import PublicTripDetailView, TripCloneView
 
 urlpatterns = [
     path("accounts/", include(("apps.accounts.urls", "accounts"), namespace="accounts")),
+    path("admin/analytics/", AdminAnalyticsView.as_view(), name="admin-analytics"),
     path("trips/", include(("apps.trips.urls", "trips"), namespace="trips")),
     path("public/trips/<slug:slug>/", PublicTripDetailView.as_view(), name="public-trip-detail"),
     path("public/trips/<slug:slug>/copy/", TripCloneView.as_view(), name="public-trip-copy"),
