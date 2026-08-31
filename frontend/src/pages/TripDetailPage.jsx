@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, CalendarDays, CheckCircle2, Clock, DollarSign, GripVertical, MapPin, Plus, Save, Trash2 } from 'lucide-react'
+import { AlertCircle, CalendarDays, CheckCircle2, Clock, Compass, DollarSign, GripVertical, MapPin, Plus, Save, Trash2 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
 import api from '../api/client'
@@ -242,10 +242,17 @@ function SortableStop({
         />
       </label>
 
-      <div className="stop-actions">
+      <div className="stop-actions" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <Button type="button" variant="secondary" onClick={() => onSave(stop)}>
           <Save size={14} /> Save Stop Details
         </Button>
+        <Link
+          to={`/discover?tab=activities&q=${encodeURIComponent(displayCity)}`}
+          className="button button--secondary button--sm"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}
+        >
+          <Compass size={14} /> Discover {displayCity} Experiences
+        </Link>
       </div>
 
       <div className="activity-list">

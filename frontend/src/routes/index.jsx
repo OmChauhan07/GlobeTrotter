@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell'
 import { AuthProvider } from '../context/AuthContext'
 import DashboardPage from '../pages/DashboardPage'
+import DiscoveryPage from '../pages/DiscoveryPage'
 import LoginPage from '../pages/LoginPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import ProfilePage from '../pages/ProfilePage'
@@ -24,6 +25,8 @@ export function AppRoutes() {
         <Route element={<AppShell />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/discover" element={<DiscoveryPage />} />
+          <Route path="/destinations" element={<DiscoveryPage />} />
           <Route path="/trips" element={<TripsPage />} />
           <Route path="/trips/new" element={<TripEditorPage />} />
           <Route path="/trips/:id" element={<TripDetailPage />} />

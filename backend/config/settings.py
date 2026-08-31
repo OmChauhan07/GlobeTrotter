@@ -181,3 +181,8 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# External Discovery Providers
+GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY", "")
+GEOAPIFY_API_TIMEOUT = int(os.getenv("GEOAPIFY_API_TIMEOUT", "5"))
+

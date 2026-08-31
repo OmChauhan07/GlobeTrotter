@@ -1,10 +1,11 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { Compass, Map, Plane, UserCircle2 } from 'lucide-react'
+import { Compass, LayoutDashboard, Map, Plane, UserCircle2 } from 'lucide-react'
 
 import { useAuth } from '../../hooks/useAuth'
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: Compass },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/discover', label: 'Discover', icon: Compass },
   { to: '/trips', label: 'Trips', icon: Map },
   { to: '/profile', label: 'Profile', icon: UserCircle2 },
 ]
