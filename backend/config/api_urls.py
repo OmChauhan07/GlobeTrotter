@@ -10,6 +10,7 @@ from apps.trips.views import PublicTripDetailView, TripCloneView
 
 urlpatterns = [
     path("accounts/", include(("apps.accounts.urls", "accounts"), namespace="accounts")),
+    path("auth/", include(("apps.accounts.urls", "auth"), namespace="auth")),
     path("admin/analytics/", AdminAnalyticsView.as_view(), name="admin-analytics"),
     path("trips/", include(("apps.trips.urls", "trips"), namespace="trips")),
     path("public/trips/<slug:slug>/", PublicTripDetailView.as_view(), name="public-trip-detail"),

@@ -96,3 +96,117 @@ class AccountAuthAPITests(APITestCase):
         self.assertEqual(traveler.role, "traveler")
         self.assertEqual(admin.role, "admin")
 
+    def test_request_otp_creates_pending_registration(self):
+        payload = {
+            "email": "otptraveler@example.com",
+            "password": "SecurePassword123!",
+            "first_name": "Oliver",
+            "last_name": "Traveler",
+        }
+        res = self.client.post(reverse("auth:register_request_otp"), payload, format="json")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("dev_otp", res.data)
+
+        from apps.accounts.models import PendingRegistration
+        pending = PendingRegistration.objects.get(email="otptraveler@example.com")
+        self.assertEqual(pending.first_name, "Oliver")
+        self.assertNotEqual(pending.otp_hash, res.data["dev_otp"])
+
+    def test_verify_otp_creates_verified_user_and_tokens(self):
+        # 1. Request OTP
+        req_res = self.client.post(
+            reverse("auth:register_request_otp"),
+            {
+                "email": "verifyuser@example.com",
+                "password": "StrongPassword123!",
+                "first_name": "Verify",
+                "last_name": "Me",
+            },
+            format="json",
+        )
+        otp = req_res.data["dev_otp"]
+
+        # 2. Verify OTP
+        verify_res = self.client.post(
+            reverse("auth:register_verify_otp"),
+            {"email": "verifyuser@example.com", "otp": otp},
+            format="json",
+        )
+        self.assertEqual(verify_res.status_code, 201)
+        self.assertIn("access", verify_res.data)
+        self.assertIn("refresh", verify_res.data)
+        self.assertEqual(verify_res.data["user"]["role"], "traveler")
+
+        # 3. Pending record deleted and user exists
+        user = User.objects.get(email="verifyuser@example.com")
+        self.assertEqual(user.first_name, "Verify")
+        self.assertEqual(user.role, "traveler")
+
+        from apps.accounts.models import PendingRegistration
+        self.assertFalse(PendingRegistration.objects.filter(email="verifyuser@example.com").exists())
+
+    def test_invalid_otp_is_rejected(self):
+        self.client.post(
+            reverse("auth:register_request_otp"),
+            {
+                "email": "badotp@example.com",
+                "password": "StrongPassword123!",
+            },
+            format="json",
+        )
+
+        res = self.client.post(
+            reverse("auth:register_verify_otp"),
+            {"email": "badotp@example.com", "otp": "000000"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.data["code"], "OTP_INVALID")
+
+    def test_expired_otp_is_rejected(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.accounts.models import PendingRegistration
+
+        self.client.post(
+            reverse("auth:register_request_otp"),
+            {
+                "email": "expired@example.com",
+                "password": "StrongPassword123!",
+            },
+            format="json",
+        )
+
+        pending = PendingRegistration.objects.get(email="expired@example.com")
+        pending.otp_expires_at = timezone.now() - timedelta(minutes=1)
+        pending.save()
+
+        res = self.client.post(
+            reverse("auth:register_verify_otp"),
+            {"email": "expired@example.com", "otp": "123456"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.data["code"], "OTP_EXPIRED")
+
+    def test_resend_otp_enforces_cooldown(self):
+        # 1. First request
+        self.client.post(
+            reverse("auth:register_request_otp"),
+            {
+                "email": "cooldown@example.com",
+                "password": "StrongPassword123!",
+            },
+            format="json",
+        )
+
+        # 2. Immediate resend should be rate limited
+        res = self.client.post(
+            reverse("auth:register_resend_otp"),
+            {"email": "cooldown@example.com"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 429)
+        self.assertEqual(res.data["code"], "OTP_RATE_LIMITED")
+
+

@@ -60,3 +60,21 @@ def create_or_save_user_profile(sender, instance, created, **kwargs):
         if hasattr(instance, "profile") and instance.profile:
             instance.profile.save()
 
+
+class PendingRegistration(models.Model):
+    email = models.EmailField(unique=True)
+    password_hash = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=150, blank=True, default="")
+    last_name = models.CharField(max_length=150, blank=True, default="")
+    username = models.CharField(max_length=150, blank=True, default="")
+    otp_hash = models.CharField(max_length=255)
+    otp_expires_at = models.DateTimeField()
+    attempt_count = models.PositiveIntegerField(default=0)
+    last_sent_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"PendingRegistration<{self.email}>"
+
+
