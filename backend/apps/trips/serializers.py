@@ -160,3 +160,34 @@ class TripActivitySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail": "activity date must fall within the stop dates."})
 
         return attrs
+
+
+class PublicTripSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source="user.username", read_only=True)
+    stops = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Trip
+        fields = [
+            "id",
+            "name",
+            "description",
+            "cover_image",
+            "start_date",
+            "end_date",
+            "is_public",
+            "public_slug",
+            "author",
+            "stops",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_stops(self, obj):
+        stops_qs = obj.stops.all().order_by("position").prefetch_related("activities", "activities__activity", "city")
+        return TripStopSerializer(stops_qs, many=True).data
+
+
+class TripCloneResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+    trip = TripSerializer()

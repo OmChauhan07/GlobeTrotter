@@ -314,3 +314,92 @@ class TripAPITests(APITestCase):
         self.assertEqual(stop1.position, 1)
         self.assertEqual(stop2.position, 2)
 
+
+class PublicSharingAndCloneAPITests(APITestCase):
+    def setUp(self):
+        self.author = User.objects.create_user(username="author", email="author@example.com", password="StrongPass123!")
+        self.traveler = User.objects.create_user(username="traveler", email="traveler@example.com", password="StrongPass123!")
+        self.city = City.objects.create(name="Kyoto", country="Japan")
+
+        self.public_trip = Trip.objects.create(
+            user=self.author,
+            name="Kyoto Cultural Journey",
+            start_date=date(2026, 10, 1),
+            end_date=date(2026, 10, 5),
+            is_public=True,
+            public_slug="kyoto-cultural-journey-123456",
+        )
+        self.stop = TripStop.objects.create(
+            trip=self.public_trip,
+            city=self.city,
+            start_date=date(2026, 10, 1),
+            end_date=date(2026, 10, 5),
+        )
+        self.activity = Activity.objects.create(city=self.city, name="Fushimi Inari Hike", category="adventure")
+        self.trip_activity = TripActivity.objects.create(
+            trip_stop=self.stop,
+            activity=self.activity,
+            date=date(2026, 10, 2),
+            start_time=time(8, 0),
+            end_time=time(11, 0),
+            estimated_cost=15.0,
+        )
+
+        self.private_trip = Trip.objects.create(
+            user=self.author,
+            name="Secret Retreat",
+            start_date=date(2026, 11, 1),
+            end_date=date(2026, 11, 3),
+            is_public=False,
+            public_slug="secret-retreat-7890",
+        )
+
+    def test_public_trip_view_unauthenticated_success(self):
+        url = reverse("trips:trip-public-detail", kwargs={"slug": "kyoto-cultural-journey-123456"})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["name"], "Kyoto Cultural Journey")
+        self.assertEqual(response.data["author"], "author")
+        self.assertEqual(len(response.data["stops"]), 1)
+        self.assertEqual(len(response.data["stops"][0]["activities"]), 1)
+        self.assertEqual(response.data["stops"][0]["activities"][0]["activity_name"], "Fushimi Inari Hike")
+
+    def test_private_trip_public_view_returns_404(self):
+        url = reverse("trips:trip-public-detail", kwargs={"slug": "secret-retreat-7890"})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_publish_toggle_generates_slug(self):
+        self.client.force_authenticate(user=self.author)
+        url = reverse("trips:trip-publish-toggle", kwargs={"pk": self.private_trip.pk})
+        response = self.client.post(url, {"is_public": True}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_public"])
+        self.assertTrue(response.data["public_slug"])
+        self.assertIn("/public/trip/", response.data["share_url"])
+
+    def test_clone_public_trip_by_authenticated_traveler(self):
+        self.client.force_authenticate(user=self.traveler)
+        url = reverse("trips:trip-public-clone", kwargs={"slug": "kyoto-cultural-journey-123456"})
+        response = self.client.post(url, format="json")
+        self.assertEqual(response.status_code, 201)
+
+        cloned_trip_id = response.data["trip"]["id"]
+        cloned_trip = Trip.objects.get(pk=cloned_trip_id)
+        self.assertEqual(cloned_trip.user, self.traveler)
+        self.assertEqual(cloned_trip.name, "Copy of Kyoto Cultural Journey")
+        self.assertFalse(cloned_trip.is_public)
+
+        # Check stops and activities duplicated
+        self.assertEqual(cloned_trip.stops.count(), 1)
+        cloned_stop = cloned_trip.stops.first()
+        self.assertEqual(cloned_stop.city, self.city)
+        self.assertEqual(cloned_stop.activities.count(), 1)
+        self.assertEqual(cloned_stop.activities.first().activity, self.activity)
+
+    def test_clone_unauthenticated_fails(self):
+        url = reverse("trips:trip-public-clone", kwargs={"slug": "kyoto-cultural-journey-123456"})
+        response = self.client.post(url, format="json")
+        self.assertEqual(response.status_code, 401)
+
+

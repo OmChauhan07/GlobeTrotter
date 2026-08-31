@@ -2,8 +2,25 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertCircle, CalendarDays, CheckCircle2, Clock, Compass, DollarSign, GripVertical, MapPin, Plus, Save, Trash2 } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import {
+  AlertCircle,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  Clock,
+  Compass,
+  Copy,
+  DollarSign,
+  ExternalLink,
+  GripVertical,
+  MapPin,
+  Plus,
+  Save,
+  Share2,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import api from '../api/client'
 import { Button } from '../components/ui/Button'
@@ -326,6 +343,7 @@ function SortableStop({
 
 export function TripDetailPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [trip, setTrip] = useState(null)
   const [stops, setStops] = useState([])
   const [draftStop, setDraftStop] = useState(emptyStop)
@@ -333,6 +351,12 @@ export function TripDetailPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+
+  // Share & Clone states
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [isCloning, setIsCloning] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
@@ -410,6 +434,47 @@ export function TripDetailPage() {
     setTimeout(() => {
       setSuccessMessage('')
     }, 3500)
+  }
+
+  const handleTogglePublish = async () => {
+    try {
+      setIsPublishing(true)
+      const res = await api.post(`/trips/${id}/publish/`)
+      setTrip((prev) => ({
+        ...prev,
+        is_public: res.data.is_public,
+        public_slug: res.data.public_slug,
+      }))
+      showSuccess(res.data.is_public ? 'Trip published to public sharing!' : 'Trip made private.')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update sharing settings.')
+    } finally {
+      setIsPublishing(false)
+    }
+  }
+
+  const handleCopyShareLink = () => {
+    if (!trip?.public_slug) return
+    const publicUrl = `${window.location.origin}/public/trip/${trip.public_slug}`
+    navigator.clipboard.writeText(publicUrl)
+    setCopiedLink(true)
+    setTimeout(() => setCopiedLink(false), 2500)
+  }
+
+  const handleDuplicateTrip = async () => {
+    if (!window.confirm(`Duplicate "${trip?.name}" into a new itinerary?`)) return
+    try {
+      setIsCloning(true)
+      const res = await api.post(`/trips/${id}/clone/`)
+      const newTripId = res.data?.trip?.id
+      if (newTripId) {
+        navigate(`/trips/${newTripId}`)
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to clone trip.')
+    } finally {
+      setIsCloning(false)
+    }
   }
 
   const handleStopDraft = (field, value) => {
@@ -741,6 +806,22 @@ export function TripDetailPage() {
                 <Link to={`/trips/${id}/calendar`} className="button button--secondary button--sm">
                   <CalendarDays size={14} /> Calendar
                 </Link>
+                <button
+                  type="button"
+                  className="button button--secondary button--sm"
+                  onClick={() => setIsShareModalOpen(true)}
+                >
+                  <Share2 size={14} /> {trip?.is_public ? 'Public Link' : 'Share'}
+                </button>
+                <button
+                  type="button"
+                  className="button button--secondary button--sm"
+                  onClick={handleDuplicateTrip}
+                  disabled={isCloning}
+                  title="Duplicate this entire trip"
+                >
+                  <Copy size={14} /> Duplicate
+                </button>
               </div>
             </div>
 
@@ -860,9 +941,78 @@ export function TripDetailPage() {
           </>
         )}
       </Card>
+      {/* Share & Publish Modal */}
+      {isShareModalOpen ? (
+        <div className="modal-backdrop" onClick={() => setIsShareModalOpen(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Share Itinerary</h3>
+                <p className="subtext">Make your itinerary public so other travelers can view and copy it.</p>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setIsShareModalOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="share-modal-body">
+              <div className="share-toggle-row">
+                <div>
+                  <strong>Public Visibility</strong>
+                  <p className="helper-text">
+                    {trip?.is_public
+                      ? 'This trip is currently public. Anyone with the link can view it.'
+                      : 'This trip is private. Only you can view and edit it.'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant={trip?.is_public ? 'primary' : 'secondary'}
+                  onClick={handleTogglePublish}
+                  disabled={isPublishing}
+                >
+                  {trip?.is_public ? 'Make Private' : 'Publish Trip'}
+                </Button>
+              </div>
+
+              {trip?.is_public && trip?.public_slug ? (
+                <div className="share-link-box">
+                  <span className="eyebrow">Public Shareable Link</span>
+                  <div className="share-input-group">
+                    <input
+                      className="input-field"
+                      readOnly
+                      value={`${window.location.origin}/public/trip/${trip.public_slug}`}
+                    />
+                    <Button type="button" onClick={handleCopyShareLink}>
+                      {copiedLink ? <Check size={15} /> : <Copy size={15} />}
+                      {copiedLink ? 'Copied!' : 'Copy'}
+                    </Button>
+                  </div>
+                  <div className="share-preview-link">
+                    <Link
+                      to={`/public/trip/${trip.public_slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="preview-link"
+                    >
+                      <ExternalLink size={13} /> View Live Public Page
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
 
 export default TripDetailPage
+
 

@@ -34,6 +34,7 @@ export function AppRoutes() {
           <Route path="/trips/:id/calendar" element={<TripCalendarPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/public/trip/:slug" element={<PublicTripPage />} />
+          <Route path="/public/trips/:slug" element={<PublicTripPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
