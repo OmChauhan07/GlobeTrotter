@@ -44,6 +44,13 @@ class TripDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Trip.objects.filter(user=self.request.user)
 
+    def perform_destroy(self, instance):
+        public_id = getattr(instance, "cover_image_public_id", None)
+        if public_id:
+            from apps.accounts.services.media import delete_image
+            delete_image(public_id)
+        instance.delete()
+
 
 class TripCoverUploadView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -57,19 +64,35 @@ class TripCoverUploadView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        from apps.accounts.media_service import upload_image_to_cloudinary
+        from apps.accounts.services.media import FOLDER_TRIPS, delete_image, upload_image
+
         try:
-            image_url = upload_image_to_cloudinary(uploaded_file, folder="globetrotter/trips")
+            asset = upload_image(uploaded_file, folder=FOLDER_TRIPS)
         except Exception as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-        trip.cover_image = image_url
-        trip.save()
+        old_public_id = trip.cover_image_public_id
+
+        try:
+            trip.cover_image = asset["url"]
+            trip.cover_image_public_id = asset["public_id"]
+            trip.save()
+        except Exception:
+            delete_image(asset["public_id"])
+            return Response(
+                {"detail": "Failed to update trip cover in database."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Safely clean up old asset after successful DB update
+        if old_public_id and old_public_id != asset["public_id"]:
+            delete_image(old_public_id)
 
         return Response(
             {
                 "message": "Trip cover image uploaded successfully.",
-                "cover_image": image_url,
+                "cover_image": asset["url"],
+                "cover_image_public_id": asset["public_id"],
                 "trip": TripSerializer(trip).data,
             },
             status=status.HTTP_200_OK,

@@ -193,7 +193,12 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Cloudinary Media Configuration (Server-Side Only)
-CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "")
+raw_cloudinary_url = (os.getenv("CLOUDINARY_URL") or "").strip()
+if raw_cloudinary_url and raw_cloudinary_url.startswith("cloudinary://"):
+    CLOUDINARY_URL = raw_cloudinary_url
+else:
+    CLOUDINARY_URL = ""
+    os.environ.pop("CLOUDINARY_URL", None)
 
 # Resend Transactional Email & OTP Configuration
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")

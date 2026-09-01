@@ -466,10 +466,61 @@ class PublicSharingAndCloneAPITests(APITestCase):
         res = self.client.post(url, {"cover_image": uploaded}, format="multipart")
         self.assertEqual(res.status_code, 200)
         self.assertIn("cover_image", res.data)
+        self.assertIn("cover_image_public_id", res.data)
         self.assertTrue(len(res.data["cover_image"]) > 0)
 
         self.public_trip.refresh_from_db()
         self.assertEqual(self.public_trip.cover_image, res.data["cover_image"])
+
+    def test_trip_cover_upload_ownership_violation_returns_404(self):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Traveler tries to upload cover for author's trip
+        self.client.force_authenticate(user=self.traveler)
+
+        img_io = io.BytesIO()
+        image = Image.new("RGB", (100, 100), color="red")
+        image.save(img_io, format="JPEG")
+        img_io.seek(0)
+
+        uploaded = SimpleUploadedFile("hacked.jpg", img_io.getvalue(), content_type="image/jpeg")
+        url = reverse("trips:trip-cover-upload", kwargs={"pk": self.public_trip.pk})
+        res = self.client.post(url, {"cover_image": uploaded}, format="multipart")
+        self.assertEqual(res.status_code, 404)
+
+    def test_trip_cover_upload_safe_replacement_and_trip_destroy(self):
+        import io
+        from PIL import Image
+        from unittest.mock import patch
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(user=self.author)
+        self.public_trip.cover_image_public_id = "globetrotter/trips/old_cover_999"
+        self.public_trip.save()
+
+        img_io = io.BytesIO()
+        image = Image.new("RGB", (150, 100), color="blue")
+        image.save(img_io, format="PNG")
+        img_io.seek(0)
+
+        uploaded = SimpleUploadedFile("new_cover.png", img_io.getvalue(), content_type="image/png")
+        url = reverse("trips:trip-cover-upload", kwargs={"pk": self.public_trip.pk})
+
+        with patch("apps.accounts.services.media.delete_image") as mock_delete:
+            mock_delete.return_value = True
+            res = self.client.post(url, {"cover_image": uploaded}, format="multipart")
+            self.assertEqual(res.status_code, 200)
+            mock_delete.assert_called_once_with("globetrotter/trips/old_cover_999")
+
+        # Now test trip deletion cleans up Cloudinary asset
+        with patch("apps.accounts.services.media.delete_image") as mock_delete2:
+            mock_delete2.return_value = True
+            delete_res = self.client.delete(reverse("trips:trip-detail", kwargs={"pk": self.public_trip.pk}))
+            self.assertEqual(delete_res.status_code, 204)
+            mock_delete2.assert_called_once()
+
 
 
 

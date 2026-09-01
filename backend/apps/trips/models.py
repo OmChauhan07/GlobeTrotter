@@ -11,6 +11,7 @@ class Trip(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, default="")
     cover_image = models.URLField(max_length=500, blank=True, default="")
+    cover_image_public_id = models.CharField(max_length=255, blank=True, default="")
     start_date = models.DateField()
     end_date = models.DateField()
     is_public = models.BooleanField(default=False)

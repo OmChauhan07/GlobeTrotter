@@ -68,7 +68,8 @@ class MeView(generics.RetrieveUpdateAPIView):
 
 class AvatarUploadView(APIView):
     """
-    Upload profile avatar image to Cloudinary and update UserProfile.avatar_url.
+    Upload profile avatar image to Cloudinary and update UserProfile.avatar_url & avatar_public_id.
+    Safely cleans up previously uploaded avatar asset after successful database update.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -80,20 +81,37 @@ class AvatarUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        from .media_service import upload_image_to_cloudinary
+        from .services.media import FOLDER_USERS, delete_image, upload_image
+
         try:
-            image_url = upload_image_to_cloudinary(uploaded_file, folder="globetrotter/avatars")
+            asset = upload_image(uploaded_file, folder=FOLDER_USERS)
         except Exception as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         profile, _ = UserProfile.objects.get_or_create(user=request.user)
-        profile.avatar_url = image_url
-        profile.save()
+        old_public_id = profile.avatar_public_id
+
+        try:
+            profile.avatar_url = asset["url"]
+            profile.avatar_public_id = asset["public_id"]
+            profile.save()
+        except Exception as db_exc:
+            # Clean up orphan upload if database save failed
+            delete_image(asset["public_id"])
+            return Response(
+                {"detail": "Failed to save avatar to user profile."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Safely clean up old asset now that DB persistence succeeded
+        if old_public_id and old_public_id != asset["public_id"]:
+            delete_image(old_public_id)
 
         return Response(
             {
                 "message": "Avatar uploaded successfully.",
-                "avatar_url": image_url,
+                "avatar_url": asset["url"],
+                "avatar_public_id": asset["public_id"],
                 "user": UserSerializer(request.user).data,
             },
             status=status.HTTP_200_OK,

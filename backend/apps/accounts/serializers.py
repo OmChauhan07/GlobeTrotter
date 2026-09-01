@@ -40,13 +40,26 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
+    avatar_public_id = serializers.SerializerMethodField()
     bio = serializers.SerializerMethodField()
     home_airport = serializers.SerializerMethodField()
     currency = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "role", "avatar_url", "bio", "home_airport", "currency"]
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "avatar_url",
+            "avatar_public_id",
+            "bio",
+            "home_airport",
+            "currency",
+        ]
         read_only_fields = fields
 
     def get_role(self, obj) -> str:
@@ -61,6 +74,11 @@ class UserSerializer(serializers.ModelSerializer):
     def get_avatar_url(self, obj) -> str:
         if hasattr(obj, "profile") and obj.profile:
             return str(obj.profile.avatar_url)
+        return ""
+
+    def get_avatar_public_id(self, obj) -> str:
+        if hasattr(obj, "profile") and obj.profile:
+            return str(obj.profile.avatar_public_id)
         return ""
 
     def get_bio(self, obj) -> str:

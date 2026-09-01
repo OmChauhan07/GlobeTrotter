@@ -14,6 +14,7 @@ class TripSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "cover_image",
+            "cover_image_public_id",
             "start_date",
             "end_date",
             "is_public",
@@ -21,7 +22,7 @@ class TripSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "public_slug"]
+        read_only_fields = ["id", "created_at", "updated_at", "public_slug", "cover_image_public_id"]
 
     def validate(self, attrs):
         start_date = attrs.get("start_date", getattr(self.instance, "start_date", None))

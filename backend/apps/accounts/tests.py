@@ -257,5 +257,62 @@ class AccountAuthAPITests(APITestCase):
             self.assertEqual(call_args["subject"], "Test Subject")
             self.assertEqual(call_args["html"], "<p>Test</p>")
 
+    def test_avatar_upload_rejects_invalid_mime_and_extensions(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        user = User.objects.create_user(username="mimeuser", email="mime@example.com", password="StrongPassword123!")
+        self.client.force_authenticate(user=user)
+
+        # 1. Text file disguised as jpg
+        bad_file = SimpleUploadedFile("fake.jpg", b"This is plain text not an image", content_type="text/plain")
+        res = self.client.post(reverse("accounts:avatar_upload"), {"avatar": bad_file}, format="multipart")
+        self.assertEqual(res.status_code, 400)
+
+        # 2. SVG file
+        svg_file = SimpleUploadedFile("icon.svg", b"<svg><circle/></svg>", content_type="image/svg+xml")
+        res2 = self.client.post(reverse("accounts:avatar_upload"), {"avatar": svg_file}, format="multipart")
+        self.assertEqual(res2.status_code, 400)
+
+    def test_avatar_upload_rejects_oversized_file(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        user = User.objects.create_user(username="biguser", email="big@example.com", password="StrongPassword123!")
+        self.client.force_authenticate(user=user)
+
+        # Create file with actual size > 5MB
+        oversized_bytes = b"\xFF\xD8\xFF\xE0\x00\x10JFIF" + (b"\x00" * (5 * 1024 * 1024 + 1000))
+        oversized_file = SimpleUploadedFile("large.jpg", oversized_bytes, content_type="image/jpeg")
+
+        res = self.client.post(reverse("accounts:avatar_upload"), {"avatar": oversized_file}, format="multipart")
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("too large", str(res.data))
+
+    def test_avatar_upload_safe_replacement_deletes_old_asset(self):
+        import io
+        from PIL import Image
+        from unittest.mock import patch
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        user = User.objects.create_user(username="replaceuser", email="replace@example.com", password="StrongPassword123!")
+        user.profile.avatar_public_id = "globetrotter/users/old_avatar_123"
+        user.profile.save()
+
+        self.client.force_authenticate(user=user)
+
+        img_io = io.BytesIO()
+        image = Image.new("RGB", (100, 100), color="purple")
+        image.save(img_io, format="PNG")
+        img_io.seek(0)
+
+        uploaded = SimpleUploadedFile("new_avatar.png", img_io.getvalue(), content_type="image/png")
+
+        with patch("apps.accounts.services.media.delete_image") as mock_delete:
+            mock_delete.return_value = True
+            res = self.client.post(reverse("accounts:avatar_upload"), {"avatar": uploaded}, format="multipart")
+            self.assertEqual(res.status_code, 200)
+            self.assertIn("avatar_public_id", res.data)
+            mock_delete.assert_called_once_with("globetrotter/users/old_avatar_123")
+
+
 
 
