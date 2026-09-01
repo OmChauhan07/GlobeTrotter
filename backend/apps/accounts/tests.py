@@ -209,4 +209,32 @@ class AccountAuthAPITests(APITestCase):
         self.assertEqual(res.status_code, 429)
         self.assertEqual(res.data["code"], "OTP_RATE_LIMITED")
 
+    def test_health_check_endpoint(self):
+        res = self.client.get(reverse("health-check"))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data, {"status": "ok"})
+
+    def test_avatar_upload_endpoint(self):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        user = User.objects.create_user(username="avataruser", email="avatar@example.com", password="StrongPassword123!")
+        self.client.force_authenticate(user=user)
+
+        # Generate simple test image
+        img_io = io.BytesIO()
+        image = Image.new("RGB", (100, 100), color="blue")
+        image.save(img_io, format="JPEG")
+        img_io.seek(0)
+
+        uploaded = SimpleUploadedFile("avatar.jpg", img_io.getvalue(), content_type="image/jpeg")
+        res = self.client.post(reverse("accounts:avatar_upload"), {"avatar": uploaded}, format="multipart")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("avatar_url", res.data)
+        self.assertTrue(len(res.data["avatar_url"]) > 0)
+
+        user.refresh_from_db()
+        self.assertEqual(user.profile.avatar_url, res.data["avatar_url"])
+
 

@@ -448,5 +448,29 @@ class PublicSharingAndCloneAPITests(APITestCase):
         self.assertEqual(cloned_expenses.count(), 1)
         self.assertEqual(float(cloned_expenses.first().amount), 50.00)
 
+    def test_trip_cover_upload_endpoint(self):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(user=self.author)
+
+        # Generate test image
+        img_io = io.BytesIO()
+        image = Image.new("RGB", (120, 80), color="green")
+        image.save(img_io, format="JPEG")
+        img_io.seek(0)
+
+        uploaded = SimpleUploadedFile("cover.jpg", img_io.getvalue(), content_type="image/jpeg")
+        url = reverse("trips:trip-cover-upload", kwargs={"pk": self.public_trip.pk})
+        res = self.client.post(url, {"cover_image": uploaded}, format="multipart")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("cover_image", res.data)
+        self.assertTrue(len(res.data["cover_image"]) > 0)
+
+        self.public_trip.refresh_from_db()
+        self.assertEqual(self.public_trip.cover_image, res.data["cover_image"])
+
+
 
 
