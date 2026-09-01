@@ -5,10 +5,22 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from apps.accounts.admin_views import AdminAnalyticsView
 from apps.trips.views import PublicTripDetailView, TripCloneView
 
+
+class HealthCheckView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, *args, **kwargs):
+        return Response({"status": "ok"})
+
+
 urlpatterns = [
+    path("health/", HealthCheckView.as_view(), name="health-check"),
     path("accounts/", include(("apps.accounts.urls", "accounts"), namespace="accounts")),
     path("auth/", include(("apps.accounts.urls", "auth"), namespace="auth")),
     path("admin/analytics/", AdminAnalyticsView.as_view(), name="admin-analytics"),
