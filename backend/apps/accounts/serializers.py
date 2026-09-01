@@ -39,20 +39,44 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    home_airport = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "role"]
+        fields = ["id", "username", "email", "first_name", "last_name", "role", "avatar_url", "bio", "home_airport", "currency"]
         read_only_fields = fields
 
-    def get_role(self, obj):
+    def get_role(self, obj) -> str:
         if hasattr(obj, "role"):
-            return obj.role
+            return str(obj.role)
         if hasattr(obj, "profile") and obj.profile:
-            return obj.profile.role
+            return str(obj.profile.role)
         if getattr(obj, "is_superuser", False) or getattr(obj, "is_staff", False):
             return "admin"
         return "traveler"
+
+    def get_avatar_url(self, obj) -> str:
+        if hasattr(obj, "profile") and obj.profile:
+            return str(obj.profile.avatar_url)
+        return ""
+
+    def get_bio(self, obj) -> str:
+        if hasattr(obj, "profile") and obj.profile:
+            return str(obj.profile.bio)
+        return ""
+
+    def get_home_airport(self, obj) -> str:
+        if hasattr(obj, "profile") and obj.profile:
+            return str(obj.profile.home_airport)
+        return ""
+
+    def get_currency(self, obj) -> str:
+        if hasattr(obj, "profile") and obj.profile:
+            return str(obj.profile.currency)
+        return "USD"
 
 
 class RequestOTPSerializer(serializers.Serializer):

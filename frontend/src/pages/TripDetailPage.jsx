@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
   AlertCircle,
   CalendarDays,
+  Camera,
   Check,
   CheckCircle2,
   Clock,
@@ -13,6 +14,7 @@ import {
   DollarSign,
   ExternalLink,
   GripVertical,
+  Loader2,
   MapPin,
   Plus,
   Save,
@@ -352,11 +354,13 @@ export function TripDetailPage() {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
-  // Share & Clone states
+  // Share & Clone & Cover states
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [isCloning, setIsCloning] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const coverInputRef = useRef(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
@@ -474,6 +478,44 @@ export function TripDetailPage() {
       setError(err.response?.data?.detail || 'Failed to clone trip.')
     } finally {
       setIsCloning(false)
+    }
+  }
+
+  const handleCoverFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Cover image file size must not exceed 5MB.')
+      return
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+    if (!validTypes.includes(file.type)) {
+      setError('Please select a valid image format (JPEG, PNG, WebP).')
+      return
+    }
+
+    try {
+      setUploadingCover(true)
+      setError('')
+      const formData = new FormData()
+      formData.append('cover_image', file)
+
+      const res = await api.post(`/trips/${id}/cover/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+
+      const newCover = res.data?.cover_image || res.data?.trip?.cover_image || URL.createObjectURL(file)
+      setTrip((prev) => ({ ...prev, cover_image: newCover }))
+      showSuccess('Trip cover image updated successfully!')
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to upload cover image.')
+    } finally {
+      setUploadingCover(false)
+      if (coverInputRef.current) {
+        coverInputRef.current.value = ''
+      }
     }
   }
 
@@ -780,6 +822,47 @@ export function TripDetailPage() {
           </div>
         ) : (
           <>
+            {trip?.cover_image ? (
+              <div
+                style={{
+                  width: '100%',
+                  height: '180px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundImage: `url(${trip.cover_image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  marginBottom: '1.5rem',
+                  position: 'relative',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
+                <button
+                  type="button"
+                  className="button button--secondary button--sm"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={uploadingCover}
+                  style={{
+                    position: 'absolute',
+                    bottom: '12px',
+                    right: '12px',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(6px)',
+                  }}
+                >
+                  {uploadingCover ? <Loader2 size={13} className="spin" /> : <Camera size={13} />}
+                  <span>Change Cover</span>
+                </button>
+              </div>
+            ) : null}
+
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: 'none' }}
+              onChange={handleCoverFileChange}
+            />
+
             <div className="trip-summary">
               <div className="summary-stat">
                 <span className="eyebrow">Trip Dates</span>
@@ -800,6 +883,18 @@ export function TripDetailPage() {
                 </p>
               </div>
               <div className="summary-links">
+                {!trip?.cover_image ? (
+                  <button
+                    type="button"
+                    className="button button--secondary button--sm"
+                    onClick={() => coverInputRef.current?.click()}
+                    disabled={uploadingCover}
+                    title="Upload cover image"
+                  >
+                    {uploadingCover ? <Loader2 size={14} className="spin" /> : <Camera size={14} />}
+                    <span>Cover</span>
+                  </button>
+                ) : null}
                 <Link to={`/trips/${id}/budget`} className="button button--secondary button--sm">
                   <DollarSign size={14} /> Budget
                 </Link>

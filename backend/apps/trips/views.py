@@ -45,6 +45,37 @@ class TripDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Trip.objects.filter(user=self.request.user)
 
 
+class TripCoverUploadView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk, *args, **kwargs):
+        trip = generics.get_object_or_404(Trip, pk=pk, user=request.user)
+        uploaded_file = request.FILES.get("cover_image") or request.FILES.get("file")
+        if not uploaded_file:
+            return Response(
+                {"detail": "No image file provided. Use form field 'cover_image' or 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from apps.accounts.media_service import upload_image_to_cloudinary
+        try:
+            image_url = upload_image_to_cloudinary(uploaded_file, folder="globetrotter/trips")
+        except Exception as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        trip.cover_image = image_url
+        trip.save()
+
+        return Response(
+            {
+                "message": "Trip cover image uploaded successfully.",
+                "cover_image": image_url,
+                "trip": TripSerializer(trip).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class TripStopListCreateView(generics.ListCreateAPIView):
     serializer_class = TripStopSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]

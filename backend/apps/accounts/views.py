@@ -8,7 +8,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import PendingRegistration, Role
+from .models import PendingRegistration, Role, UserProfile
 from .otp_service import (
     OTP_COOLDOWN_SECONDS,
     OTP_MAX_ATTEMPTS,
@@ -58,12 +58,46 @@ class RegisterView(generics.CreateAPIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
-class MeView(generics.RetrieveAPIView):
+class MeView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
+
+class AvatarUploadView(APIView):
+    """
+    Upload profile avatar image to Cloudinary and update UserProfile.avatar_url.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        uploaded_file = request.FILES.get("avatar") or request.FILES.get("file")
+        if not uploaded_file:
+            return Response(
+                {"detail": "No image file provided. Use form field 'avatar' or 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from .media_service import upload_image_to_cloudinary
+        try:
+            image_url = upload_image_to_cloudinary(uploaded_file, folder="globetrotter/avatars")
+        except Exception as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        profile.avatar_url = image_url
+        profile.save()
+
+        return Response(
+            {
+                "message": "Avatar uploaded successfully.",
+                "avatar_url": image_url,
+                "user": UserSerializer(request.user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class RequestRegistrationOTPView(APIView):

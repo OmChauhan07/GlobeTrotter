@@ -17,6 +17,7 @@ class UserProfile(models.Model):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.TRAVELER)
+    avatar_url = models.URLField(max_length=500, blank=True, default="")
     home_airport = models.CharField(max_length=50, blank=True, default="")
     currency = models.CharField(max_length=10, default="USD")
     bio = models.TextField(blank=True, default="")
