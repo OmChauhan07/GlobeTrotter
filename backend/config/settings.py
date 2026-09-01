@@ -192,6 +192,15 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"),
+    ).split(",")
+    if origin.strip()
+]
+
 # Cloudinary Media Configuration (Server-Side Only)
 raw_cloudinary_url = (os.getenv("CLOUDINARY_URL") or "").strip()
 if raw_cloudinary_url and raw_cloudinary_url.startswith("cloudinary://"):

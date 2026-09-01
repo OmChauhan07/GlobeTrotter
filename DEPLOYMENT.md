@@ -1,4 +1,4 @@
-﻿# 🚀 GlobeTrotter — Production Deployment Architecture & Guide
+# 🚀 GlobeTrotter — Production Deployment Architecture & Guide
 
 This document outlines the complete production deployment setup for **GlobeTrotter** across **Vercel** (Frontend) and **Render** (Backend), integrated with **Neon PostgreSQL**, **Resend** (OTP & Transactional Email), and **Cloudinary** (Media & Asset Storage).
 
@@ -82,10 +82,12 @@ python manage.py migrate
 | `DATABASE_URL` | Yes | Neon PostgreSQL pooled connection string | `postgres://user:pass@ep-xyz.neon.tech/globetrotter?sslmode=require` |
 | `ALLOWED_HOSTS` | Yes | Comma-separated list of backend domains | `.onrender.com,api.globetrotter.travel,localhost` |
 | `CORS_ALLOWED_ORIGINS` | Yes | Comma-separated list of frontend Vercel domains | `https://globetrotter.vercel.app,https://globetrotter-travel.vercel.app` |
+| `CSRF_TRUSTED_ORIGINS` | Optional | Comma-separated list of trusted origins for CSRF | `https://globetrotter.vercel.app` |
 | `RESEND_API_KEY` | Yes | Resend API key for transactional emails | `re_123456789abcdef` |
 | `EMAIL_FROM` | Yes | Verified sender email on your Resend domain | `GlobeTrotter <noreply@yourdomain.com>` |
 | `CLOUDINARY_URL` | Yes | Cloudinary connection URL | `cloudinary://API_KEY:API_SECRET@CLOUD_NAME` |
 | `GEOAPIFY_API_KEY` | Optional | Geoapify API key for live external destination search | `your_geoapify_key` |
+| `GEOAPIFY_API_TIMEOUT` | Optional | Timeout (seconds) for external Geoapify requests | `5` |
 | `OTP_EXPIRY_MINUTES` | Optional | Registration OTP expiration window | `10` |
 | `OTP_RESEND_COOLDOWN_SECONDS` | Optional | Rate limit cooldown for OTP resends | `60` |
 | `OTP_MAX_ATTEMPTS` | Optional | Maximum failed verification attempts before invalidation | `5` |
