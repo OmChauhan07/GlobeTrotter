@@ -1,9 +1,6 @@
-﻿import os
-import json
 import logging
+import os
 import secrets
-import urllib.request
-import urllib.error
 from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
@@ -90,39 +87,34 @@ def send_otp_email(email: str, otp: str, first_name: str = "") -> dict:
     if is_dev_mode:
         print(f"\n[DEV_OTP] >>> Verification code for {email}: {otp} <<<\n")
 
-    if not resend_api_key or (is_dev_mode and not os.environ.get("FORCE_RESEND_IN_DEV")):
+    if not resend_api_key:
         return {
             "sent": True,
             "provider": "dev_console",
             "dev_otp": otp if is_dev_mode else None,
         }
 
-    try:
-        url = "https://api.resend.com/emails"
-        payload = {
-            "from": email_from,
-            "to": [email],
-            "subject": f"{otp} is your GlobeTrotter verification code",
-            "html": html_content,
-            "text": text_content,
+    from .services.email import send_email
+
+    subject = f"{otp} is your GlobeTrotter verification code"
+    result = send_email(to=email, subject=subject, html=html_content, text=text_content)
+
+    if result.get("sent"):
+        return {
+            "sent": True,
+            "provider": "resend",
+            "response": result.get("response"),
+            "dev_otp": otp if is_dev_mode else None,
         }
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=data,
-            headers={
-                "Authorization": f"Bearer {resend_api_key}",
-                "Content-Type": "application/json",
-                "User-Agent": "GlobeTrotter-Backend/1.0",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            resp_body = resp.read().decode("utf-8")
-            logger.info("Resend API response: %s", resp_body)
-            return {"sent": True, "provider": "resend", "response": json.loads(resp_body)}
-    except Exception as exc:
-        logger.error("Failed to dispatch email via Resend API: %s", exc)
-        if is_dev_mode:
-            return {"sent": True, "provider": "dev_console_fallback", "dev_otp": otp}
-        return {"sent": False, "error": str(exc)}
+
+    logger.warning("[OTP] Resend delivery failed for %s (%s). Falling back to dev mode if applicable.", email, result.get("error"))
+    if is_dev_mode:
+        return {
+            "sent": True,
+            "provider": "dev_console_fallback",
+            "dev_otp": otp,
+            "error": result.get("error"),
+        }
+
+    return {"sent": False, "error": result.get("error")}
+

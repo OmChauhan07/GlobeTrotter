@@ -237,4 +237,25 @@ class AccountAuthAPITests(APITestCase):
         user.refresh_from_db()
         self.assertEqual(user.profile.avatar_url, res.data["avatar_url"])
 
+    def test_send_email_service_with_resend(self):
+        from unittest.mock import patch
+        from apps.accounts.services.email import send_email
+
+        with patch("resend.Emails.send") as mock_send:
+            mock_send.return_value = {"id": "test-resend-id-123"}
+            res = send_email(
+                to="traveler@example.com",
+                subject="Test Subject",
+                html="<p>Test</p>",
+            )
+            self.assertTrue(res["sent"])
+            self.assertEqual(res["provider"], "resend")
+            mock_send.assert_called_once()
+            call_args = mock_send.call_args[0][0]
+            self.assertEqual(call_args["from"], "GlobeTrotter <onboarding@resend.dev>")
+            self.assertEqual(call_args["to"], ["traveler@example.com"])
+            self.assertEqual(call_args["subject"], "Test Subject")
+            self.assertEqual(call_args["html"], "<p>Test</p>")
+
+
 
